@@ -1,37 +1,93 @@
 #include <stdio.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/uart.h"
 #include "driver/gpio.h"
+#include "esp_log.h"
+#include "hardware_init.h"
 
-// Definisikan pin LED. Ubah jika dev board Anda menggunakan pin lain.
-#define BLINK_GPIO 23
+#define NODE_NAME "Node A"
 
-void app_main(void)
-{
-    // 1. Inisialisasi dan konfigurasi GPIO
-    // Sangat disarankan di ESP-IDF v5+ untuk mereset pin sebelum digunakan
-    gpio_reset_pin(BLINK_GPIO); 
-    
-    // Set arah pin sebagai output
-    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+static const char *TAG = "LORA A";
 
-    uint8_t led_state = 0;
 
-    printf("Blink test started. Mempersiapkan modul untuk integrasi E220...\n");
 
-    // 2. Loop utama
+void lora_rx_task(void *pvParameters) {
+    uint8_t data[BUF_SIZE];
+
     while (1) {
-        // Toggle state
-        led_state = !led_state;
+        // Baca buffer UART (Non-blocking)
+        int len = uart_read_bytes(LORA_UART_NUM, data, BUF_SIZE - 1, pdMS_TO_TICKS(20));
         
-        // Terapkan state ke GPIO
-        gpio_set_level(BLINK_GPIO, led_state);
+        if (len > 0) {
+            data[len] = '\0'; // Tambahkan null terminator
+            ESP_LOGI(TAG, ">>> DITERIMA: %s", (char*)data);
+            
+            // Kedipkan LED sebagai indikator visual pesan masuk
+            gpio_set_level(GREEN_LED_PIN, 1);
+            vTaskDelay(pdMS_TO_TICKS(100));
+            gpio_set_level(GREEN_LED_PIN, 0);
+        }
         
-        // Print status ke serial monitor untuk verifikasi tambahan
-        printf("LED State: %s\n", led_state == 1 ? "ON" : "OFF");
-        
-        // Delay 1000 milidetik (1 detik)
-        // portTICK_PERIOD_MS memastikan durasi delay akurat terlepas dari konfigurasi tick rate FreeRTOS
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
+}
+
+// --- TASK FREERTOS: MENGIRIM DATA PTT (TX) ---
+// Modul beralih state untuk mengirim hanya ketika tombol ditekan
+void lora_tx_task(void *pvParameters) {
+    char payload[128];
+    int counter = 1;
+    bool is_pressed = false;
+
+    while (1) {
+        // Logika PTT: Cek tombol (0 berarti ditekan karena pull-up internal)
+        if (gpio_get_level(BUTTON_PIN) == 0) {
+            
+            // Hindari pengiriman spam jika tombol ditahan terus
+            if (!is_pressed) { 
+                // Format string pesan
+                snprintf(payload, sizeof(payload), "[%s] Teks ke-%d", NODE_NAME, counter);
+
+                // Verifikasi modul tidak sibuk sebelum mengirim data ke UART
+                if (gpio_get_level(LORA_AUX_PIN) == 1) {
+                    uart_write_bytes(LORA_UART_NUM, payload, strlen(payload));
+                    ESP_LOGI(TAG, "<<< DIKIRIM (PTT): %s", payload);
+                    counter++;
+                    
+                    // Nyalakan LED selama tombol ditekan sebagai tanda TX aktif
+                    gpio_set_level(GREEN_LED_PIN, 1);
+                } else {
+                    ESP_LOGW(TAG, "Gagal mengirim, modul LoRa sedang memproses data di udara (AUX=0)");
+                }
+                is_pressed = true; 
+            }
+        } else {
+            // Jika tombol dilepas, reset status
+            if (is_pressed) {
+                gpio_set_level(GREEN_LED_PIN, 0); // Matikan LED TX
+                is_pressed = false;
+            }
+        }
+
+        // Interval polling tombol (debouncing sederhana)
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}
+
+
+
+void app_main(void) {
+    // Panggil fungsi inisialisasi
+    
+    button_init();
+    led_init();
+    m0_m1_lora_init();
+    aux_lora_init();
+    uart_lora_init();
+    
+
+    xTaskCreate(lora_rx_task, "lora_rx", 4096, NULL, 5, NULL);
+    xTaskCreate(lora_tx_task, "lora_tx", 4096, NULL, 4, NULL);
 }

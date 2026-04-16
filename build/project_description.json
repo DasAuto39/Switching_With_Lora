@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "project_ws",
-    "project_version":    "c40a62d",
+    "project_version":    "8aae4c2-dirty",
     "project_path":       "/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws",
     "idf_path":           "/home/kamna/esp/esp-idf",
     "build_dir":          "/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build",
@@ -1225,7 +1225,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/esp-idf/main/libmain.a",
-            "sources": [ "/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/main/project_ws.c" ],
+            "sources": [ "/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/main/project_ws.c", "/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/main/hardware_init.c" ],
             "include_dirs": [ "." ]
         },
         "mbedtls": {
