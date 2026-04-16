@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/CMakeFiles/bootloader
+/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/CMakeFiles/bootloader.rule
+/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/CMakeFiles/bootloader-complete.rule
+/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

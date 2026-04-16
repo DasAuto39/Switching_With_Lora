@@ -1,0 +1,56 @@
+Command: ninja flash
+[1/10] Performing build step for 'bootloader'
+[1/1] cd /home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader/esp-idf/esptool_py && /home/kamna/.espressif/python_env/idf5.5_py3.10_env/bin/python /home/kamna/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x1000 /home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader/bootloader.bin
+Bootloader binary size 0x66c0 bytes. 0x940 bytes (8%) free.
+[2/8] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/project_ws.c.obj
+[3/8] Linking C static library esp-idf/main/libmain.a
+[4/8] Generating esp-idf/esp_system/ld/sections.ld
+[5/8] Linking CXX executable project_ws.elf
+[6/8] Generating binary image from built executable
+esptool.py v4.11.0
+Creating esp32 image...
+Merged 2 ELF sections
+Successfully created esp32 image.
+Generated /home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/project_ws.bin
+[7/8] cd /home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/esp-idf/esptool_py && /home/kamna/.espressif/python_env/idf5.5_py3.10_env/bin/python /home/kamna/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/partition_table/partition-table.bin /home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/project_ws.bin
+project_ws.bin binary size 0x28ec0 bytes. Smallest app partition is 0x100000 bytes. 0xd7140 bytes (84%) free.
+[7/8] cd /home/kamna/esp/esp-idf/components/esptool_py && /usr/bin/cmake -D IDF_PATH=/home/kamna/esp/esp-idf -D "SERIAL_TOOL=/home/kamna/.espressif/python_env/idf5.5_py3.10_env/bin/python;;/home/kamna/esp/esp-idf/components/esptool_py/esptool/esptool.py;--chip;esp32" -D "SERIAL_TOOL_ARGS=--before=default_reset;--after=hard_reset;write_flash;@flash_args" -D WORKING_DIRECTORY=/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build -P /home/kamna/esp/esp-idf/components/esptool_py/run_serial_tool.cmake
+esptool.py --chip esp32 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size 2MB 0x1000 bootloader/bootloader.bin 0x10000 project_ws.bin 0x8000 partition_table/partition-table.bin
+esptool.py v4.11.0
+Serial port /dev/ttyUSB0
+Connecting....
+Chip is ESP32-D0WD-V3 (revision v3.1)
+Features: WiFi, BT, Dual Core, 240MHz, VRef calibration in efuse, Coding Scheme None
+Crystal is 40MHz
+MAC: 88:57:21:bf:ea:54
+Uploading stub...
+Running stub...
+Stub running...
+Changing baud rate to 460800
+Changed.
+Configuring flash size...
+Flash will be erased from 0x00001000 to 0x00007fff...
+Flash will be erased from 0x00010000 to 0x00038fff...
+Flash will be erased from 0x00008000 to 0x00008fff...
+SHA digest in image updated
+Compressed 26304 bytes to 16551...
+Writing at 0x00001000... (50 %)
+Writing at 0x000075e2... (100 %)
+Wrote 26304 bytes (16551 compressed) at 0x00001000 in 0.7 seconds (effective 308.1 kbit/s)...
+Hash of data verified.
+Compressed 167616 bytes to 93718...
+Writing at 0x00010000... (16 %)
+Writing at 0x0001c8a1... (33 %)
+Writing at 0x000222b9... (50 %)
+Writing at 0x000281c7... (66 %)
+Writing at 0x0002e517... (83 %)
+Writing at 0x00034543... (100 %)
+Wrote 167616 bytes (93718 compressed) at 0x00010000 in 2.4 seconds (effective 554.5 kbit/s)...
+Hash of data verified.
+Compressed 3072 bytes to 103...
+Writing at 0x00008000... (100 %)
+Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (effective 688.4 kbit/s)...
+Hash of data verified.
+
+Leaving...
+Hard resetting via RTS pin...
