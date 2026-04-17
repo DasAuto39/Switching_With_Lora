@@ -70,6 +70,7 @@ void uart_lora_init(void) {
     ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, LORA_TXD_PIN, LORA_RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 }
 
+
 // Fungsi bungkus agar di main.c cukup panggil satu baris ini saja
 void init_all_hardware(void) {
     button_init();

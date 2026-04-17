@@ -7,6 +7,7 @@
 #include "esp_log.h"
 #include "hardware_init.h"
 
+// Ganti nama node untuk flash lora kedua
 #define NODE_NAME "Node A"
 
 static const char *TAG = "LORA A";
@@ -41,34 +42,41 @@ void lora_tx_task(void *pvParameters) {
     int counter = 1;
     bool is_pressed = false;
 
+    uart_flush_input(LORA_UART_NUM);
+    
     while (1) {
         // Logika PTT: Cek tombol (0 berarti ditekan karena pull-up internal)
         if (gpio_get_level(BUTTON_PIN) == 0) {
             
             // Hindari pengiriman spam jika tombol ditahan terus
-            if (!is_pressed) { 
+           
                 // Format string pesan
-                snprintf(payload, sizeof(payload), "[%s] Teks ke-%d", NODE_NAME, counter);
+            snprintf(payload, sizeof(payload), "[%s] Teks ke-%d", NODE_NAME, counter);
 
-                // Verifikasi modul tidak sibuk sebelum mengirim data ke UART
-                if (gpio_get_level(LORA_AUX_PIN) == 1) {
-                    uart_write_bytes(LORA_UART_NUM, payload, strlen(payload));
-                    ESP_LOGI(TAG, "<<< DIKIRIM (PTT): %s", payload);
-                    counter++;
-                    
-                    // Nyalakan LED selama tombol ditekan sebagai tanda TX aktif
-                    gpio_set_level(GREEN_LED_PIN, 1);
-                } else {
-                    ESP_LOGW(TAG, "Gagal mengirim, modul LoRa sedang memproses data di udara (AUX=0)");
-                }
-                is_pressed = true; 
+            // Verifikasi modul tidak sibuk sebelum mengirim data ke UART
+            if (gpio_get_level(LORA_AUX_PIN) == 1) {
+                uart_write_bytes(LORA_UART_NUM, payload, strlen(payload));
+                ESP_LOGI(TAG, "<<< DIKIRIM (PTT): %s", payload);
+                counter++;
+                
+                // Nyalakan LED selama tombol ditekan sebagai tanda TX aktif
+                gpio_set_level(RED_LED_PIN, 1);
+                vTaskDelay(pdMS_TO_TICKS(1000)); 
+                
+                gpio_set_level(RED_LED_PIN, 0);
+            } else {
+                ESP_LOGW(TAG, "Gagal mengirim, modul LoRa sedang memproses data di udara (AUX=0)");
+                vTaskDelay(pdMS_TO_TICKS(100)); // Cek lagi setelah 100ms
             }
+            
+            
         } else {
             // Jika tombol dilepas, reset status
-            if (is_pressed) {
-                gpio_set_level(GREEN_LED_PIN, 0); // Matikan LED TX
-                is_pressed = false;
-            }
+            
+            gpio_set_level(RED_LED_PIN, 0); // Matikan LED TX
+            vTaskDelay(pdMS_TO_TICKS(50));
+           
+            
         }
 
         // Interval polling tombol (debouncing sederhana)

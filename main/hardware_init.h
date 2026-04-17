@@ -25,5 +25,6 @@ void m0_m1_lora_init(void);
 void aux_lora_init(void);
 void uart_lora_init(void);
 void init_all_hardware(void); // Fungsi pembungkus (Opsional tapi disarankan)
+void configure_lora_channel(void);
 
 #endif // HARDWARE_INIT_H
