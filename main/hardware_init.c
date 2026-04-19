@@ -71,6 +71,50 @@ void uart_lora_init(void) {
 }
 
 
+void configure_lora_channel(void) {
+    ESP_LOGI("LORA_CONFIG", "Memulai proses konfigurasi Register...");
+
+    // 1. Tunggu modul selesai dengan tugas sebelumnya
+    while(gpio_get_level(LORA_AUX_PIN) == 0) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    // 2. Masuk ke MODE KONFIGURASI (M0=1, M1=1)
+    gpio_set_level(LORA_M0_PIN, 1);
+    gpio_set_level(LORA_M1_PIN, 1);
+    
+    // Tunggu AUX kembali stabil setelah pergantian mode
+    vTaskDelay(pdMS_TO_TICKS(50));
+    while(gpio_get_level(LORA_AUX_PIN) == 0) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    // 3. Siapkan Array Hex Configuration
+    // C0 00 00 62 00 0F 03 -> Mengatur Channel ke 0x0F (865 MHz)
+    uint8_t config_cmd[] = {0xC0, 0x05, 0x01, 0x83};
+
+    ESP_LOGI("LORA_CONFIG", "Mengirim parameter konfigurasi ke modul...");
+    uart_write_bytes(UART_NUM_2, (const char*)config_cmd, sizeof(config_cmd));
+
+    // 4. Tunggu modul memproses dan menyimpan ke Flash
+    vTaskDelay(pdMS_TO_TICKS(50));
+    while(gpio_get_level(LORA_AUX_PIN) == 0) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    // 5. Kembalikan ke MODE NORMAL / TRANSPARENT (M0=0, M1=0)
+    gpio_set_level(LORA_M0_PIN, 0);
+    gpio_set_level(LORA_M1_PIN, 0);
+
+    // Tunggu stabil
+    vTaskDelay(pdMS_TO_TICKS(50));
+    while(gpio_get_level(LORA_AUX_PIN) == 0) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    ESP_LOGI("LORA_CONFIG", "Konfigurasi selesai! Modul kembali ke Mode Normal.");
+}
+
 // Fungsi bungkus agar di main.c cukup panggil satu baris ini saja
 void init_all_hardware(void) {
     button_init();
