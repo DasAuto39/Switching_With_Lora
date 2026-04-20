@@ -91,7 +91,7 @@ void configure_lora_channel(void) {
 
     // 3. Siapkan Array Hex Configuration
     // C0 00 00 62 00 0F 03 -> Mengatur Channel ke 0x0F (865 MHz)
-    uint8_t config_cmd[] = {0xC0, 0x05, 0x01, 0x83};
+    uint8_t config_cmd[] = {0xC0, 0x03, 0x03, 0x20, 0x12, 0x83};
 
     ESP_LOGI("LORA_CONFIG", "Mengirim parameter konfigurasi ke modul...");
     uart_write_bytes(UART_NUM_2, (const char*)config_cmd, sizeof(config_cmd));
