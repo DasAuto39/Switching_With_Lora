@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "project_ws",
-    "project_version":    "5e0cd6a-dirty",
+    "project_version":    "9e913d4-dirty",
     "project_path":       "/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws",
     "idf_path":           "/home/kamna/esp/esp-idf",
     "build_dir":          "/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build",

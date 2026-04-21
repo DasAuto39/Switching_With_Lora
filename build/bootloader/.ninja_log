@@ -238,3 +238,12 @@
 3	42	0	/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	9a3b3619792560e2
 3	40	0	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	9a3b3619792560e2
 3	40	0	/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	9a3b3619792560e2
+1	21	1776682728360318854	esp-idf/esp_bootloader_format/CMakeFiles/__idf_esp_bootloader_format.dir/esp_bootloader_desc.c.obj	4a393a1004d7de8d
+21	32	1776682728370305129	esp-idf/esp_bootloader_format/libesp_bootloader_format.a	2e1c03e831527ff2
+32	81	1776682728417240623	bootloader.elf	6bfebf3be0dd469a
+81	153	1776682728491139061	.bin_timestamp	14a929a920f4e276
+81	153	1776682728491139061	/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader/.bin_timestamp	14a929a920f4e276
+153	173	0	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	9a3b3619792560e2
+153	173	0	/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	9a3b3619792560e2
+2	34	0	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	9a3b3619792560e2
+2	34	0	/home/kamna/Documents/projects/wsProject/Switching_With_Lora/project_ws/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	9a3b3619792560e2
