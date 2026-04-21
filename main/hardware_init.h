@@ -13,6 +13,9 @@
 #define GREEN_LED_PIN      23
 #define RED_LED_PIN        25
 #define BUTTON_PIN         26
+#define GPS_RX_PIN_ESP 32  // Ke pin TX modul Neo-6M
+#define GPS_TX_PIN_ESP 33  // Ke pin RX modul Neo-6M
+#define GPS_UART_NUM UART_NUM_1
 
 // --- KONFIGURASI UART ---
 #define LORA_BAUD_RATE     9600
