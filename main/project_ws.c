@@ -9,14 +9,60 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "hardware_init.h"
+#include "mbedtls/aes.h"
+
+// Kunci Rahasia AES-128 (Wajib 16 Karakter / 16 Byte)
+const unsigned char AES_SECRET_KEY[16] = "VMS_ITS_KEY_2026";
+
+// Mengonversi data biner ke teks Hex (contoh: 0A 1B 2C...)
+void bin_to_hex(const unsigned char* bin, int len, char* hex_out) {
+    for(int i = 0; i < len; i++) {
+        sprintf(hex_out + (i * 2), "%02X", bin[i]);
+    }
+}
+
+// Mengonversi teks Hex kembali ke data biner
+void hex_to_bin(const char* hex_in, int len, unsigned char* bin_out) {
+    for(int i = 0; i < len; i += 2) {
+        sscanf(hex_in + i, "%2hhx", &bin_out[i / 2]);
+    }
+}
+
+// Fungsi Enkripsi AES-128 (Mengubah String Teks menjadi Biner Terenkripsi)
+// Payload GPS kita butuh 2 blok AES (2 x 16 byte = 32 byte)
+void encrypt_payload(const char* input_str, unsigned char* output_bin) {
+    mbedtls_aes_context aes;
+    mbedtls_aes_init(&aes);
+    mbedtls_aes_setkey_enc(&aes, AES_SECRET_KEY, 128);
+
+    unsigned char input_padded[32] = {0}; 
+    strcpy((char*)input_padded, input_str); // Otomatis mengisi sisa ruang dengan {0}
+
+    mbedtls_aes_crypt_ecb(&aes, MBEDTLS_AES_ENCRYPT, input_padded, output_bin);
+    mbedtls_aes_crypt_ecb(&aes, MBEDTLS_AES_ENCRYPT, input_padded + 16, output_bin + 16);
+
+    mbedtls_aes_free(&aes);
+}
+
+// Fungsi Dekripsi AES-128 (Mengembalikan Biner Terenkripsi menjadi Teks Asli)
+void decrypt_payload(const unsigned char* input_bin, char* output_str) {
+    mbedtls_aes_context aes;
+    mbedtls_aes_init(&aes);
+    mbedtls_aes_setkey_dec(&aes, AES_SECRET_KEY, 128);
+
+    mbedtls_aes_crypt_ecb(&aes, MBEDTLS_AES_DECRYPT, input_bin, (unsigned char*)output_str);
+    mbedtls_aes_crypt_ecb(&aes, MBEDTLS_AES_DECRYPT, input_bin + 16, (unsigned char*)(output_str + 16));
+
+    mbedtls_aes_free(&aes);
+}
 
 // ==============================================================================
 // MASTER SWITCH: TENTUKAN PERANGKAT YANG AKAN DI-FLASH DI SINI!
 // Silakan Uncomment salah satu baris di bawah ini, dan Comment yang lainnya.
 // ==============================================================================
 
-#define COMPILE_NODE_B  // Aktifkan baris ini untuk mem-flash Kapal (GPS + Slave)
-//#define COMPILE_NODE_B  // Aktifkan baris ini untuk mem-flash Pelabuhan (Master)
+#define COMPILE_NODE_A   // Aktifkan baris ini untuk mem-flash Kapal (GPS + Slave)
+//#define COMPILE_NODE_B  // Aktifkan baris ini untuk mem-flash Pelabuhan (Master) circuit my 
 
 // ==============================================================================
 
@@ -28,9 +74,7 @@
 static const char *TAG = "NODE_A_KAPAL";
 
 // Pin GPS (Revisi Bebas Bentrok)
-#define GPS_RX_PIN_ESP 32  // Ke pin TX modul Neo-6M
-#define GPS_TX_PIN_ESP 33  // Ke pin RX modul Neo-6M
-#define GPS_UART_NUM UART_NUM_1
+
 
 SemaphoreHandle_t gps_mutex;
 float current_lat = 0.0;
@@ -50,8 +94,9 @@ float convert_nmea_to_decimal(float nmea_coord, char direction) {
 
 // Task GPS Background
 void gps_reading_task(void *pvParameters) {
-    uint8_t data[BUF_SIZE];
-    char line[128];
+    uint8_t data[BUF_SIZE] = {0};
+    char line[128] = {0};
+
     int line_pos = 0;
 
     while (1) {
@@ -95,7 +140,7 @@ void gps_reading_task(void *pvParameters) {
 
 // Task LoRa Slave
 void lora_slave_task(void *pvParameters) {
-    uint8_t data[BUF_SIZE];
+    uint8_t data[BUF_SIZE] = {0};
     uart_flush_input(UART_NUM_2);
 
     while (1) {
@@ -103,7 +148,7 @@ void lora_slave_task(void *pvParameters) {
         if (len > 0) {
             data[len - 1] = '\0'; 
             if (strncmp((char*)data, "REQ_DATA", 8) == 0) {
-                char payload[128];
+                char payload[128] = {0};
                 if (xSemaphoreTake(gps_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
                     if (is_gps_valid) {
                         snprintf(payload, sizeof(payload), "LAT:%.6f,LON:%.6f", current_lat, current_lon);
@@ -170,7 +215,7 @@ float calculate_distance(float lat1, float lon1, float lat2, float lon2) {
 }
 
 void lora_master_task(void *pvParameters) {
-    uint8_t data[BUF_SIZE];
+    uint8_t data[BUF_SIZE] = {0};;
     uint8_t query_noise_cmd[] = {0xC0, 0xC1, 0xC2, 0xC3, 0x00, 0x01};
     const char* req_cmd = "REQ_DATA";
     
@@ -187,7 +232,7 @@ void lora_master_task(void *pvParameters) {
         ESP_LOGW(TAG, "Meminta data dari Kapal...");
         uart_flush_input(UART_NUM_2); 
         uart_write_bytes(UART_NUM_2, req_cmd, strlen(req_cmd));
-
+        vTaskDelay(pdMS_TO_TICKS(500));
         // Fase 3 & 4: Terima & Kalkulasi
         len = uart_read_bytes(UART_NUM_2, data, BUF_SIZE - 1, pdMS_TO_TICKS(2000));
         if (len > 0) {
