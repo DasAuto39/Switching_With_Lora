@@ -2,8 +2,8 @@
 #define HARDWARE_INIT_H
 
 #include <stdint.h>
-#define COMPILE_MINSIS
-//#define COMPILE_BREADBOARD
+//#define COMPILE_MINSIS
+#define COMPILE_BREADBOARD
 
 #ifdef COMPILE_MINSIS
 

@@ -118,9 +118,9 @@ void configure_lora_channel(void) {
     // Fungsi bungkus agar di main.c cukup panggil satu baris ini saja
     void init_all_hardware(void) {
         //button_init();
-        //m0_m1_lora_init();
-        //aux_lora_init();
+        m0_m1_lora_init();
+        aux_lora_init();
         uart_lora_init();
-        //led_init();
+        led_init();
         ESP_LOGI(TAG_HW, "Semua hardware berhasil diinisialisasi.");
     }
