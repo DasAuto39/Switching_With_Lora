@@ -94,33 +94,33 @@ void configure_lora_channel(void) {
     uint8_t config_cmd[] = {0xC0, 0x03, 0x03, 0x20, 0x12, 0x83};
 
     ESP_LOGI("LORA_CONFIG", "Mengirim parameter konfigurasi ke modul...");
-    uart_write_bytes(UART_NUM_2, (const char*)config_cmd, sizeof(config_cmd));
+        uart_write_bytes(UART_NUM_2, (const char*)config_cmd, sizeof(config_cmd));
 
-    // 4. Tunggu modul memproses dan menyimpan ke Flash
-    vTaskDelay(pdMS_TO_TICKS(50));
-    while(gpio_get_level(LORA_AUX_PIN) == 0) {
-        vTaskDelay(pdMS_TO_TICKS(10));
+        // 4. Tunggu modul memproses dan menyimpan ke Flash
+        vTaskDelay(pdMS_TO_TICKS(50));
+        while(gpio_get_level(LORA_AUX_PIN) == 0) {
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+
+        // 5. Kembalikan ke MODE NORMAL / TRANSPARENT (M0=0, M1=0)
+        gpio_set_level(LORA_M0_PIN, 0);
+        gpio_set_level(LORA_M1_PIN, 0);
+
+        // Tunggu stabil
+        vTaskDelay(pdMS_TO_TICKS(50));
+        while(gpio_get_level(LORA_AUX_PIN) == 0) {
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+
+        ESP_LOGI("LORA_CONFIG", "Konfigurasi selesai! Modul kembali ke Mode Normal.");
     }
 
-    // 5. Kembalikan ke MODE NORMAL / TRANSPARENT (M0=0, M1=0)
-    gpio_set_level(LORA_M0_PIN, 0);
-    gpio_set_level(LORA_M1_PIN, 0);
-
-    // Tunggu stabil
-    vTaskDelay(pdMS_TO_TICKS(50));
-    while(gpio_get_level(LORA_AUX_PIN) == 0) {
-        vTaskDelay(pdMS_TO_TICKS(10));
+    // Fungsi bungkus agar di main.c cukup panggil satu baris ini saja
+    void init_all_hardware(void) {
+        //button_init();
+        //m0_m1_lora_init();
+        //aux_lora_init();
+        uart_lora_init();
+        //led_init();
+        ESP_LOGI(TAG_HW, "Semua hardware berhasil diinisialisasi.");
     }
-
-    ESP_LOGI("LORA_CONFIG", "Konfigurasi selesai! Modul kembali ke Mode Normal.");
-}
-
-// Fungsi bungkus agar di main.c cukup panggil satu baris ini saja
-void init_all_hardware(void) {
-    button_init();
-    led_init();
-    m0_m1_lora_init();
-    aux_lora_init();
-    uart_lora_init();
-    ESP_LOGI(TAG_HW, "Semua hardware berhasil diinisialisasi.");
-}

@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "hardware_init.h"
 #include "mbedtls/aes.h"
+#include "location.c"
 
 // Kunci Rahasia AES-128 (Wajib 16 Karakter / 16 Byte)
 const unsigned char AES_SECRET_KEY[16] = "VMS_ITS_KEY_2026";
@@ -61,7 +62,7 @@ void decrypt_payload(const unsigned char* input_bin, char* output_str) {
 // Silakan Uncomment salah satu baris di bawah ini, dan Comment yang lainnya.
 // ==============================================================================
 
-#define COMPILE_NODE_A   // Aktifkan baris ini untuk mem-flash Kapal (GPS + Slave)
+#define COMPILE_NODE_B   // Aktifkan baris ini untuk mem-flash Kapal (GPS + Slave)
 //#define COMPILE_NODE_B  // Aktifkan baris ini untuk mem-flash Pelabuhan (Master) circuit my 
 
 // ==============================================================================
@@ -94,34 +95,43 @@ float convert_nmea_to_decimal(float nmea_coord, char direction) {
 
 // Task GPS Background
 void gps_reading_task(void *pvParameters) {
+    //ESP_LOGI(TAG, "ini didalam slave gps");
     uint8_t data[BUF_SIZE] = {0};
     char line[128] = {0};
 
     int line_pos = 0;
 
     while (1) {
+        memset(data, 0, BUF_SIZE);
         int len = uart_read_bytes(GPS_UART_NUM, data, BUF_SIZE - 1, pdMS_TO_TICKS(100));
+        
         for (int i = 0; i < len; i++) {
             char c = (char)data[i];
+            //ESP_LOGI(TAG, "Data from gps uart : %c", c);
             if (c == '\n') {
                 line[line_pos] = '\0'; 
+                //ESP_LOGI(TAG,"LINE : %s", line);
                 if (strncmp(line, "$GPRMC", 6) == 0) {
                     char *tokens[15];
                     int token_count = 0;
                     char *token = strtok(line, ",");
+                    //ESP_LOGI(TAG,"token : %c", token);
                     while (token != NULL && token_count < 15) {
                         tokens[token_count++] = token;
                         token = strtok(NULL, ",");
+                        
                     }
                     if (token_count > 6 && strcmp(tokens[2], "A") == 0) {
                         float raw_lat = atof(tokens[3]);
                         char lat_dir = tokens[4][0];
                         float raw_lon = atof(tokens[5]);
                         char lon_dir = tokens[6][0];
-
+                        //ESP_LOGI(TAG,"raw lat : %f | lat dir : %c | raw lon : %f | lon dir : %c", raw_lat,lat_dir,raw_lon,lon_dir);
+                        
                         if (xSemaphoreTake(gps_mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
                             current_lat = convert_nmea_to_decimal(raw_lat, lat_dir);
                             current_lon = convert_nmea_to_decimal(raw_lon, lon_dir);
+                            
                             is_gps_valid = true;
                             xSemaphoreGive(gps_mutex);
                         }
@@ -132,6 +142,8 @@ void gps_reading_task(void *pvParameters) {
                 line_pos = 0; 
             } else if (c != '\r' && line_pos < sizeof(line) - 1) {
                 line[line_pos++] = c;
+                    //ESP_LOGI(TAG,"LINE : %s", line);
+
             }
         }
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -140,18 +152,21 @@ void gps_reading_task(void *pvParameters) {
 
 // Task LoRa Slave
 void lora_slave_task(void *pvParameters) {
+    
     uint8_t data[BUF_SIZE] = {0};
     uart_flush_input(UART_NUM_2);
-
+    
     while (1) {
         int len = uart_read_bytes(UART_NUM_2, data, BUF_SIZE - 1, pdMS_TO_TICKS(100));
         if (len > 0) {
-            data[len - 1] = '\0'; 
+            data[len] = '\0'; 
+            ESP_LOGI(TAG, "Diterima [%d bytes]: %s", len, (char*)data);
             if (strncmp((char*)data, "REQ_DATA", 8) == 0) {
                 char payload[128] = {0};
                 if (xSemaphoreTake(gps_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
                     if (is_gps_valid) {
-                        snprintf(payload, sizeof(payload), "LAT:%.6f,LON:%.6f", current_lat, current_lon);
+                        //snprintf(payload, sizeof(payload), "LAT:%.6f,LON:%.6f", current_lat, current_lon);
+                        snprintf(payload, sizeof(payload), "Tes");
                     } else {
                         snprintf(payload, sizeof(payload), "GPS_NO_FIX");
                     }
@@ -161,9 +176,9 @@ void lora_slave_task(void *pvParameters) {
                 uart_write_bytes(UART_NUM_2, payload, strlen(payload));
                 ESP_LOGI(TAG, "=> Membalas Master: %s", payload);
                 
-                gpio_set_level(GREEN_LED_PIN, 1);
+                //gpio_set_level(GREEN_LED_PIN, 1);
                 vTaskDelay(pdMS_TO_TICKS(20));
-                gpio_set_level(GREEN_LED_PIN, 0);
+                //gpio_set_level(GREEN_LED_PIN, 0);
             }
         }
     }
@@ -173,7 +188,7 @@ void app_main(void) {
     ESP_LOGW(TAG, "MEMULAI FIRMWARE NODE A (KAPAL)");
     gps_mutex = xSemaphoreCreateMutex();
     init_all_hardware();
-    
+    //configure_lora_channel();
     uart_config_t gps_uart_config = {
         .baud_rate = 9600,
         .data_bits = UART_DATA_8_BITS,
@@ -184,11 +199,11 @@ void app_main(void) {
     uart_param_config(GPS_UART_NUM, &gps_uart_config);
     uart_set_pin(GPS_UART_NUM, GPS_TX_PIN_ESP, GPS_RX_PIN_ESP, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     uart_driver_install(GPS_UART_NUM, 1024 * 2, 0, 0, NULL, 0);
-
-    configure_lora_channel();
+    
 
     xTaskCreate(gps_reading_task, "gps_task", 4096, NULL, 4, NULL);
     xTaskCreate(lora_slave_task, "lora_slave", 4096, NULL, 5, NULL);
+    //ESP_LOGI(TAG, "ini disini");
 }
 
 #elif defined(COMPILE_NODE_B)
@@ -199,9 +214,6 @@ void app_main(void) {
 static const char *TAG = "NODE_B_MASTER";
 int current_noise_floor_dbm = -105; 
 
-// Koordinat Base Station 
-const float BASE_LAT = -7.284916; 
-const float BASE_LON = 112.795808;
 
 float calculate_distance(float lat1, float lon1, float lat2, float lon2) {
     float dLat = (lat2 - lat1) * M_PI / 180.0;
@@ -215,7 +227,7 @@ float calculate_distance(float lat1, float lon1, float lat2, float lon2) {
 }
 
 void lora_master_task(void *pvParameters) {
-    uint8_t data[BUF_SIZE] = {0};;
+    uint8_t data[BUF_SIZE] = {0};
     uint8_t query_noise_cmd[] = {0xC0, 0xC1, 0xC2, 0xC3, 0x00, 0x01};
     const char* req_cmd = "REQ_DATA";
     
@@ -227,6 +239,7 @@ void lora_master_task(void *pvParameters) {
         if (len == 4 && data[0] == 0xC1) {
             current_noise_floor_dbm = - (256 - (int)data[3]);
         } 
+        vTaskDelay(pdMS_TO_TICKS(50));
 
         // Fase 2: Panggil Kapal
         ESP_LOGW(TAG, "Meminta data dari Kapal...");
@@ -235,6 +248,7 @@ void lora_master_task(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(500));
         // Fase 3 & 4: Terima & Kalkulasi
         len = uart_read_bytes(UART_NUM_2, data, BUF_SIZE - 1, pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(50));
         if (len > 0) {
             uint8_t rssi_byte = data[len - 1];
             int rssi_dbm = (int)rssi_byte - 256; 
@@ -243,7 +257,7 @@ void lora_master_task(void *pvParameters) {
             char* payload = (char*)data;
 
             ESP_LOGI(TAG, ">>> PESAN MASUK : %s", payload);
-            ESP_LOGI(TAG, "    [RF DATA] RSSI: %d dBm | SNR: %d dB", rssi_dbm, snr_db);
+            ESP_LOGI(TAG, "    [RF DATA] RSSI: %d dBm | SNR: %d dB | Ambient Noise: %d", rssi_dbm, snr_db, current_noise_floor_dbm);
 
             if (strncmp(payload, "GPS_NO_FIX", 10) != 0) {
                 float ship_lat, ship_lon;
@@ -262,6 +276,9 @@ void lora_master_task(void *pvParameters) {
             gpio_set_level(GREEN_LED_PIN, 0);
         } else {
             ESP_LOGE(TAG, "Timeout! Kapal tidak merespons.");
+            gpio_set_level(RED_LED_PIN, 1);
+            vTaskDelay(pdMS_TO_TICKS(50));
+            gpio_set_level(RED_LED_PIN, 0);
         }
         ESP_LOGW(TAG, "--------------------------------------------------");
         vTaskDelay(pdMS_TO_TICKS(3000)); 
@@ -269,6 +286,7 @@ void lora_master_task(void *pvParameters) {
 }
 
 void app_main(void) {
+    
     ESP_LOGW(TAG, "MEMULAI FIRMWARE NODE B (PELABUHAN)");
     init_all_hardware();
     configure_lora_channel();
