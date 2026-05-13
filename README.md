@@ -1,57 +1,60 @@
-# 🚢 Switching With LoRa — Sistem Switching Komunikasi Berbasis LoRa
+# Switching With LoRa — Sistem Switching Komunikasi Berbasis LoRa
 
-## 📌 Tentang Projek Ini
+## Tentang Projek Ini
 
-Projek ini merupakan sistem embedded yang dirancang untuk melakukan **switching (perpindahan) teknologi komunikasi secara cerdas** pada lingkungan maritim. Sistem ini memanfaatkan modul **LoRa (Long Range)** sebagai jalur komunikasi utama antara kapal dan pelabuhan, serta modul **GPS** untuk mengetahui posisi kapal secara real-time.
+Projek ini membahas tentang bagaimana sebuah sistem komunikasi bisa secara otomatis berpindah (switching) dari satu teknologi ke teknologi lain, tergantung kondisi sinyal yang terjadi saat itu. Konteks yang diangkat di sini adalah komunikasi antara kapal dan pelabuhan.
 
-Data telemetri berupa kualitas sinyal (RSSI, SNR), jarak, dan tingkat keberhasilan pengiriman paket (PDR) dikumpulkan oleh perangkat di sisi pelabuhan, kemudian dikirimkan ke cloud melalui protokol **MQTT**. Data tersebut selanjutnya akan digunakan oleh model **Machine Learning** untuk mengambil keputusan — apakah komunikasi sebaiknya tetap menggunakan LoRa, atau perlu beralih (*switching*) ke teknologi komunikasi lain yang lebih optimal pada kondisi tersebut.
+Secara sederhana, kapal yang sedang berlayar akan terus mengirimkan data posisinya (lewat GPS) ke pelabuhan menggunakan komunikasi **LoRa**. Di sisi pelabuhan, sistem akan mengukur seberapa bagus kualitas sinyal yang diterima — mulai dari kekuatan sinyal, tingkat noise, sampai berapa banyak paket data yang berhasil sampai. Semua informasi ini kemudian dikirim ke cloud melalui **MQTT**, supaya bisa dianalisis oleh model **Machine Learning** yang akan menentukan: apakah LoRa masih cukup baik untuk digunakan, atau sudah saatnya berpindah ke teknologi komunikasi lain.
 
-Secara gambaran besar, projek ini menjadi bagian dari riset tentang bagaimana keputusan perpindahan teknologi komunikasi dapat dilakukan secara **otomatis dan berbasis data**, bukan lagi bergantung pada keputusan manual.
+Jadi inti dari projek ini bukan sekadar mengirim data GPS, melainkan **mengumpulkan data kualitas komunikasi** yang nantinya menjadi dasar pengambilan keputusan switching secara otomatis.
 
-> **Catatan:** Repository ini mencakup bagian **embedded/firmware** saja. Bagian Machine Learning tidak termasuk di dalamnya.
-
----
-
-## ❓ Rumusan Masalah
-
-Komunikasi di lingkungan laut memiliki beberapa tantangan yang cukup signifikan:
-
-1. **Jarak komunikasi yang besar** — Kapal dapat berlayar hingga puluhan kilometer dari pelabuhan, sehingga dibutuhkan teknologi komunikasi dengan jangkauan yang memadai.
-2. **Kualitas sinyal yang tidak stabil** — Kondisi di laut menyebabkan kualitas sinyal berfluktuasi akibat faktor cuaca, gelombang, dan interferensi. Diperlukan mekanisme pemantauan kualitas sinyal secara real-time.
-3. **Tidak adanya mekanisme switching otomatis** — Ketika kualitas sinyal LoRa menurun, belum tersedia sistem yang mampu secara otomatis beralih ke jalur komunikasi lain. Proses perpindahan masih dilakukan secara manual dan kurang efisien.
-4. **Minimnya data telemetri sebagai dasar keputusan** — Tanpa pengukuran parameter seperti RSSI, SNR, noise floor, dan jarak secara berkala, tidak terdapat landasan data yang memadai untuk mendukung pengambilan keputusan switching yang tepat.
+> **Catatan:** Repository ini hanya mencakup bagian embedded/firmware. Bagian Machine Learning tidak termasuk di dalamnya.
 
 ---
 
-## 🎯 Tujuan
+## Rumusan Masalah
 
-1. Membangun sistem komunikasi antara kapal dan pelabuhan menggunakan **LoRa** sebagai medium utama transmisi data.
-2. Mengumpulkan data telemetri komunikasi (**RSSI, SNR, jarak, dan PDR**) secara real-time untuk dijadikan dataset.
-3. Mengirimkan data telemetri ke cloud melalui **MQTT broker** agar dapat diproses oleh model Machine Learning sebagai dasar keputusan switching.
-4. Mengamankan data yang ditransmisikan melalui LoRa menggunakan enkripsi **AES-128** untuk menjaga kerahasiaan informasi.
-5. Menyediakan infrastruktur embedded yang mendukung pengambilan keputusan switching berbasis **probabilistik** — yaitu perpindahan ke teknologi komunikasi yang lebih optimal berdasarkan kondisi sinyal pada saat itu.
+Ada beberapa permasalahan yang melatarbelakangi projek ini:
+
+1. **Jarak komunikasi yang besar** — Kapal bisa berlayar hingga puluhan kilometer dari pelabuhan. Tidak semua teknologi komunikasi mampu menjangkau jarak tersebut dengan baik.
+
+2. **Kualitas sinyal yang tidak menentu** — Di lingkungan laut, sinyal bisa tiba-tiba melemah karena cuaca, gelombang, atau gangguan dari sumber lain. Tanpa pemantauan, kita tidak akan tahu kapan kondisi sinyal mulai memburuk.
+
+3. **Belum ada mekanisme switching yang otomatis** — Saat kualitas sinyal LoRa sudah menurun, perpindahan ke teknologi lain masih dilakukan secara manual. Ini tentu tidak efisien, apalagi kalau kondisinya berubah cepat.
+
+4. **Kurangnya data sebagai dasar keputusan** — Untuk bisa membuat keputusan switching yang tepat, dibutuhkan data telemetri (RSSI, SNR, noise, jarak, dsb.) yang dikumpulkan secara terus-menerus. Tanpa data ini, keputusan hanya berdasarkan perkiraan.
 
 ---
 
-## 💡 Solusi yang Diterapkan
+## Tujuan
 
-Sistem ini terdiri dari **dua node** dengan peran yang berbeda:
+1. Membangun sistem komunikasi antara kapal dan pelabuhan menggunakan LoRa sebagai jalur utama pengiriman data.
+2. Mengumpulkan data telemetri komunikasi (RSSI, SNR, jarak, dan PDR) secara real-time untuk dijadikan dataset.
+3. Mengirimkan data tersebut ke cloud melalui MQTT broker, sehingga bisa diproses oleh model Machine Learning untuk menghasilkan keputusan switching.
+4. Mengamankan data yang dikirim lewat LoRa menggunakan enkripsi AES-128 agar tidak mudah disadap.
+5. Menyediakan infrastruktur embedded yang mendukung keputusan switching secara probabilistik — yaitu berpindah ke teknologi komunikasi lain ketika kondisi sinyal sudah tidak memadai.
+
+---
+
+## Solusi yang Diterapkan
+
+Sistem ini dibagi menjadi dua perangkat (node) yang masing-masing punya tugas berbeda:
 
 ### Node A — Kapal (Slave)
-- Membaca data koordinat GPS dari modul **Neo-6M** dengan melakukan parsing terhadap sentence NMEA `$GPRMC`.
-- Mengonversi koordinat dari format NMEA ke format **desimal** (latitude dan longitude).
-- Mengirimkan data lokasi kapal ke pelabuhan melalui modul **LoRa E220-900T22D**. Apabila GPS belum mendapatkan sinyal, sistem akan mengirimkan status `GPS_NO_FIX`.
+- Membaca data koordinat GPS dari modul Neo-6M dengan melakukan parsing terhadap sentence NMEA `$GPRMC`.
+- Mengonversi koordinat dari format NMEA ke format desimal (latitude dan longitude).
+- Mengirimkan data lokasi ke pelabuhan melalui modul LoRa E220-900T22D. Jika GPS belum mendapatkan sinyal, sistem akan mengirimkan status `GPS_NO_FIX`.
 
 ### Node B — Pelabuhan (Master)
 - Menerima data lokasi dari kapal melalui LoRa.
-- Menghitung nilai **RSSI** (kekuatan sinyal yang diterima) dan **SNR** (perbandingan sinyal terhadap noise) dari setiap paket yang masuk.
-- Membaca **Ambient Noise Floor** dari modul LoRa secara periodik sebagai referensi tingkat noise lingkungan.
-- Menghitung **jarak** antara kapal dan pelabuhan menggunakan rumus **Haversine**.
-- Menghitung **PDR (Packet Delivery Ratio)** — persentase paket yang berhasil diterima dari total paket yang diharapkan.
-- Mengirimkan seluruh data telemetri ke **HiveMQ MQTT Broker** dalam format **JSON**.
-- Menerima keputusan switching dari model Machine Learning melalui MQTT (subscribe).
+- Mengukur RSSI (kekuatan sinyal) dan SNR (perbandingan sinyal terhadap noise) dari setiap paket yang diterima.
+- Membaca ambient noise floor dari modul LoRa secara berkala sebagai referensi tingkat kebisingan lingkungan.
+- Menghitung jarak antara kapal dan pelabuhan menggunakan rumus Haversine.
+- Menghitung PDR (Packet Delivery Ratio), yaitu berapa persen paket yang berhasil diterima dari total yang seharusnya sampai.
+- Mengirimkan seluruh data telemetri ke HiveMQ MQTT Broker dalam format JSON.
+- Menerima keputusan switching dari model Machine Learning melalui MQTT.
 
-### Diagram Alur Sistem
+### Alur Sistem Secara Keseluruhan
 
 ```
 [Kapal + GPS] --LoRa--> [Pelabuhan] --WiFi/MQTT--> [Cloud/ML] --MQTT--> [Keputusan Switching]
@@ -59,9 +62,9 @@ Sistem ini terdiri dari **dua node** dengan peran yang berbeda:
 
 ---
 
-## 📊 Parameter dan Nilai yang Digunakan
+## Parameter dan Nilai yang Digunakan
 
-### Konfigurasi Komunikasi LoRa
+### Konfigurasi LoRa
 | Parameter | Nilai |
 |---|---|
 | Baud Rate | 9600 bps |
@@ -70,14 +73,14 @@ Sistem ini terdiri dari **dua node** dengan peran yang berbeda:
 | Interval Pengiriman Data | 2 detik |
 | Interval Pembacaan Noise | 15 detik |
 
-### Parameter Telemetri yang Dikumpulkan
+### Data Telemetri yang Dikumpulkan
 | Parameter | Satuan | Keterangan |
 |---|---|---|
-| **RSSI** | dBm | Kekuatan sinyal yang diterima. Semakin mendekati 0, semakin kuat sinyalnya. |
-| **SNR** | dB | Selisih antara kekuatan sinyal dan noise. Semakin besar nilainya, semakin bersih sinyal yang diterima. |
-| **Ambient Noise** | dBm | Tingkat noise lingkungan sekitar. Nilai default awal: -105 dBm. |
-| **Jarak** | km | Jarak antara kapal dan base station, dihitung menggunakan rumus Haversine. |
-| **PDR** | % | Persentase paket yang berhasil diterima dibandingkan total paket yang seharusnya diterima. |
+| RSSI | dBm | Kekuatan sinyal yang diterima. Semakin mendekati 0, semakin kuat. |
+| SNR | dB | Selisih antara sinyal dan noise. Semakin besar, semakin bersih sinyalnya. |
+| Ambient Noise | dBm | Tingkat noise lingkungan. Nilai default awal: -105 dBm. |
+| Jarak | km | Jarak kapal ke base station, dihitung dengan rumus Haversine. |
+| PDR | % | Persentase paket yang berhasil diterima dari total yang diharapkan. |
 
 ### Koordinat Base Station (Pelabuhan)
 | Parameter | Nilai |
@@ -90,7 +93,6 @@ Sistem ini terdiri dari **dua node** dengan peran yang berbeda:
 |---|---|
 | Metode Enkripsi | AES-128 ECB |
 | Panjang Kunci | 16 byte (128 bit) |
-| Kunci Rahasia | `VMS_ITS_KEY_2026` |
 
 ### Konfigurasi MQTT
 | Parameter | Nilai |
@@ -101,27 +103,27 @@ Sistem ini terdiri dari **dua node** dengan peran yang berbeda:
 
 ---
 
-## 🔧 Sensor dan Perangkat Keras
+## Sensor dan Perangkat Keras
 
 ### Mikrokontroler
-- **ESP32** — Mikrokontroler utama yang menjalankan seluruh logika sistem. Dipilih karena memiliki dukungan WiFi bawaan, jumlah GPIO yang memadai, serta kemampuan menjalankan **FreeRTOS** untuk multitasking.
+**ESP32** — Mikrokontroler utama yang menjalankan seluruh logika sistem. Dipilih karena sudah memiliki WiFi bawaan, GPIO yang cukup banyak, dan bisa menjalankan FreeRTOS untuk menangani beberapa tugas secara bersamaan.
 
-### Modul Komunikasi LoRa
-- **E220-900T22D (EBYTE)** — Modul transceiver LoRa yang beroperasi pada frekuensi 900 MHz. Modul ini mampu berkomunikasi pada jarak beberapa kilometer dengan konsumsi daya yang rendah, serta memiliki fitur pembacaan ambient noise.
+### Modul LoRa
+**E220-900T22D (EBYTE)** — Modul transceiver LoRa yang bekerja di frekuensi 900 MHz. Mampu berkomunikasi hingga beberapa kilometer dengan konsumsi daya yang rendah. Modul ini juga memiliki fitur pembacaan ambient noise yang digunakan untuk menghitung SNR.
 
 ### Modul GPS
-- **Neo-6M (u-blox)** — Modul GPS yang mengirimkan data posisi melalui UART dalam format NMEA. Sentence yang di-parsing pada projek ini adalah `$GPRMC` untuk mendapatkan koordinat latitude dan longitude.
+**Neo-6M (u-blox)** — Modul GPS yang mengirimkan data posisi melalui UART dalam format NMEA. Pada projek ini, sentence yang digunakan adalah `$GPRMC` untuk mendapatkan koordinat latitude dan longitude.
 
 ### Indikator LED
-- **LED Hijau (GPIO 32)** — Menyala sesaat ketika data yang diterima teridentifikasi sebagai paket valid.
-- **LED Merah (GPIO 33)** — Menyala sesaat ketika data yang diterima tidak dikenali oleh sistem.
+- **LED Hijau (GPIO 32)** — Menyala sebentar ketika data yang diterima merupakan paket yang valid.
+- **LED Merah (GPIO 33)** — Menyala sebentar ketika data yang masuk tidak dikenali oleh sistem.
 
-### Konektivitas Internet
-- **WiFi (built-in ESP32)** — Digunakan pada Node B (Pelabuhan) untuk terhubung ke jaringan internet dan melakukan publish data telemetri ke MQTT broker.
+### Koneksi Internet
+**WiFi (bawaan ESP32)** — Digunakan di Node B (Pelabuhan) untuk terhubung ke internet dan mengirimkan data telemetri ke MQTT broker.
 
 ---
 
-## 🏗️ Struktur Projek
+## Struktur Projek
 
 ```
 Switching_With_Lora/
@@ -139,21 +141,24 @@ Switching_With_Lora/
 
 ---
 
-## ⚙️ Cara Build dan Flash
+## Cara Build dan Flash
 
-Projek ini menggunakan **ESP-IDF** (framework resmi dari Espressif untuk ESP32).
+Projek ini menggunakan **ESP-IDF**, framework resmi dari Espressif untuk pengembangan ESP32.
 
 1. **Instalasi ESP-IDF** — Ikuti panduan resmi di [docs.espressif.com](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/)
-2. **Pemilihan Node** — Buka file `project_ws.c`, kemudian uncomment salah satu:
+
+2. **Pilih Node yang akan di-flash** — Buka file `project_ws.c`, lalu uncomment salah satu baris berikut:
    ```c
-   #define COMPILE_NODE_A  // Untuk flash ke perangkat Kapal (Slave + GPS)
-   #define COMPILE_NODE_B  // Untuk flash ke perangkat Pelabuhan (Master)
+   #define COMPILE_NODE_A  // Untuk perangkat Kapal (Slave + GPS)
+   #define COMPILE_NODE_B  // Untuk perangkat Pelabuhan (Master)
    ```
-3. **Pemilihan Board** — Buka file `hardware_init.h`, kemudian uncomment salah satu:
+
+3. **Pilih jenis board** — Buka file `hardware_init.h`, lalu uncomment salah satu:
    ```c
    #define COMPILE_MINSIS       // Untuk PCB custom
    #define COMPILE_BREADBOARD   // Untuk rangkaian breadboard
    ```
+
 4. **Build dan Flash**:
    ```bash
    cd project_ws
@@ -163,15 +168,15 @@ Projek ini menggunakan **ESP-IDF** (framework resmi dari Espressif untuk ESP32).
 
 ---
 
-## 📡 Format Data
+## Format Data
 
-### Transmisi LoRa (Kapal → Pelabuhan)
+### Transmisi LoRa (Kapal ke Pelabuhan)
 ```
 LAT:-7.284916,LON:112.795808    # Koordinat GPS valid
 GPS_NO_FIX                       # GPS belum mendapatkan sinyal
 ```
 
-### Publish MQTT (Pelabuhan → Cloud)
+### Publish MQTT (Pelabuhan ke Cloud)
 ```json
 {
   "rssi": -78,
